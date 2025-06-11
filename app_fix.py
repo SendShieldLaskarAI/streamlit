@@ -16,6 +16,7 @@ from tensorflow.keras.models import load_model
 import pickle
 from openai import OpenAI
 from PIL import Image
+import time
 
 # =============================================================================
 # 2. KONFIGURASI TERPUSAT
