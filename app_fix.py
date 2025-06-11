@@ -202,7 +202,7 @@ def get_aura_feedback(_prediction_index, _llm_client, _llm_mode):
     model_name = CONFIG["groq_model"] if _llm_mode == "Groq" else CONFIG["ollama_model"]
     
     try:
-        response = _llm_client.chat.completions.create(model=model_name, messages=[{"role": "system", "content": system_role}, {"role": "user", "content": prompt}], temperature=0.7, max_tokens=200)
+        response = _llm_client.chat.completions.create(model=model_name, messages=[{"role": "system", "content": system_role}, {"role": "user", "content": prompt}], temperature=0.7, max_tokens=1000)
         return response.choices[0].message.content
     except Exception as e:
         print(f"Error saat menghubungi LLM, fallback ke manual: {e}")
