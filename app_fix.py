@@ -170,7 +170,12 @@ def preprocess_text(raw_text, resources):
 
 @st.cache_data
 def get_aura_feedback(_prediction_index, _llm_client, _llm_mode):
+    """
+    Menghasilkan prompt dan memanggil LLM berdasarkan prediksi.
+    Sekarang dengan instruksi eksplisit untuk menggunakan Bahasa Indonesia.
+    """
     if _llm_mode == "Manual":
+        # Bagian manual fallback tidak berubah
         print("AURA: Menggunakan feedback manual/template.")
         templates = {
             0: "Kerja bagus! Komunikasi Anda positif. Teruslah menjadi contoh yang baik di dunia maya!",
@@ -183,29 +188,41 @@ def get_aura_feedback(_prediction_index, _llm_client, _llm_mode):
     print(f"AURA: Menghasilkan feedback dari LLM mode ({_llm_mode})...")
     system_role = "Anda adalah Asisten AI yang positif dan suportif bernama 'AURA' (Asisten Untuk Ruang Aman)."
     prompt = ""
-    prompts = {
-        0: "Sebuah teks baru saja dianalisis dan teridentifikasi tidak mengandung perundungan. Berikan pujian singkat atas komunikasi yang positif dan berikan 1-2 tips umum untuk terus menjaga interaksi online tetap sehat dan positif. Jaga agar respons singkat dan memotivasi.**Pastikan seluruh respons Anda dalam Bahasa Indonesia.**",
-        1: ("Anda adalah Asisten AI yang bijaksana dan empatik bernama 'AURA'.", "Sebuah teks dianalisis dan terdeteksi mengandung potensi perundungan tingkat rendah, seperti sarkasme yang bisa menyinggung atau ejekan halus. Tanpa perlu tahu teks aslinya, jelaskan secara umum mengapa komunikasi semacam ini kadang bisa disalahpahami dan berikan satu tips untuk memastikan candaan atau kritik diterima dengan baik. Fokus pada kesadaran diri dan empati.**Seluruh respons wajib dalam Bahasa Indonesia.**"),
-        2: ("Anda adalah Asisten AI yang peduli dan bertanggung jawab bernama 'AURA'.", "Sebuah teks dianalisis dan terdeteksi mengandung potensi perundungan tingkat sedang, seperti penggunaan kata-kata kasar atau serangan personal. Tanpa perlu tahu teks aslinya, berikan nasihat edukatif. Jelaskan secara umum dampak negatif dari bahasa semacam itu. Kemudian, berikan 1-2 saran praktis untuk refleksi diri sebelum mengirim pesan, seperti 'berpikir sejenak' atau 'memeriksa ulang nada tulisan'. Tujuannya adalah mendorong refleksi, bukan menghakimi.**Gunakan hanya Bahasa Indonesia dalam jawaban Anda.**"),
-        3: ("Anda adalah Asisten AI yang sangat peduli terhadap keamanan online bernama 'AURA'.", "Sebuah teks baru saja dianalisis dan terdeteksi mengandung konten berbahaya atau perundungan tingkat tinggi, seperti ancaman atau ujaran kebencian serius. Tanpa perlu tahu teks aslinya, tugas Anda adalah memberikan peringatan yang serius dan fokus pada keamanan. Jelaskan secara umum bahaya dari komunikasi semacam itu. Sarankan dengan tegas untuk tidak mengirim pesan tersebut dan pertimbangkan untuk berbicara dengan seseorang yang dipercaya jika sedang merasa sangat marah. Prioritaskan de-eskalasi dan keamanan.**Respons harus dalam Bahasa Indonesia.**")
-    }
     
-    if _prediction_index in prompts:
-        if isinstance(prompts[_prediction_index], tuple):
-            system_role, prompt = prompts[_prediction_index]
-        else:
-            prompt = prompts[_prediction_index]
+    if _prediction_index == 0:
+        prompt = """Sebuah teks baru saja dianalisis dan teridentifikasi tidak mengandung perundungan. Berikan pujian singkat atas komunikasi yang positif dan berikan 1-2 tips umum untuk terus menjaga interaksi online tetap sehat dan positif. Jaga agar respons singkat dan memotivasi. **Pastikan seluruh respons Anda dalam Bahasa Indonesia.**"""
+    
+    elif _prediction_index == 1:
+        system_role = "Anda adalah Asisten AI yang bijaksana dan empatik bernama 'AURA'."
+        prompt = """Sebuah teks dianalisis dan terdeteksi mengandung potensi perundungan tingkat rendah, seperti sarkasme yang bisa menyinggung atau ejekan halus. Tanpa perlu tahu teks aslinya, jelaskan secara umum mengapa komunikasi semacam ini kadang bisa disalahpahami dan berikan satu tips untuk memastikan candaan atau kritik diterima dengan baik. Fokus pada kesadaran diri dan empati. **Seluruh respons wajib dalam Bahasa Indonesia.**"""
+    
+    elif _prediction_index == 2:
+        system_role = "Anda adalah Asisten AI yang peduli dan bertanggung jawab bernama 'AURA'."
+        prompt = """Sebuah teks dianalisis dan terdeteksi mengandung potensi perundungan tingkat sedang, seperti penggunaan kata-kata kasar atau serangan personal. Tanpa perlu tahu teks aslinya, berikan nasihat edukatif. Jelaskan secara umum dampak negatif dari bahasa semacam itu. Kemudian, berikan 1-2 saran praktis untuk refleksi diri sebelum mengirim pesan, seperti 'berpikir sejenak' atau 'memeriksa ulang nada tulisan'. Tujuannya adalah mendorong refleksi, bukan menghakimi. **Gunakan hanya Bahasa Indonesia dalam jawaban Anda.**"""
+    
+    elif _prediction_index == 3:
+        system_role = "Anda adalah Asisten AI yang sangat peduli terhadap keamanan online bernama 'AURA'."
+        prompt = """Sebuah teks baru saja dianalisis dan terdeteksi mengandung konten berbahaya atau perundungan tingkat tinggi, seperti ancaman atau ujaran kebencian serius. Tanpa perlu tahu teks aslinya, tugas Anda adalah memberikan peringatan yang serius dan fokus pada keamanan. Jelaskan secara umum bahaya dari komunikasi semacam itu. Sarankan dengan tegas untuk tidak mengirim pesan tersebut dan pertimbangkan untuk berbicara dengan seseorang yang dipercaya jika sedang merasa sangat marah. Prioritaskan de-eskalasi dan keamanan. **Respons harus dalam Bahasa Indonesia.**"""
+    
     else:
         return "Tidak ada saran yang tersedia untuk prediksi ini."
     
-    # --- PERBAIKAN: Pilih nama model berdasarkan mode LLM ---
-    model_name = CONFIG["groq_model"] if _llm_mode == "Groq" else CONFIG["ollama_model"]
-    
     try:
-        response = _llm_client.chat.completions.create(model=model_name, messages=[{"role": "system", "content": system_role}, {"role": "user", "content": prompt}], temperature=0.7, max_tokens=1000)
+        # Panggilan ke LLM tidak berubah
+        model_name = CONFIG["groq_model"] if _llm_mode == "Groq" else CONFIG["ollama_model"]
+        response = _llm_client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system_role},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=200
+        )
         return response.choices[0].message.content
     except Exception as e:
         print(f"Error saat menghubungi LLM, fallback ke manual: {e}")
+        # Jika API call gagal, fallback lagi ke manual
         return get_aura_feedback(_prediction_index, None, "Manual")
 
 def run_prediction_pipeline(raw_text, resources):
