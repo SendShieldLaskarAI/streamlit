@@ -29,7 +29,7 @@ CONFIG = {
     "max_length": 120,
     "padding_type": 'post',
     "trunc_type": 'post',
-    "llm_model": "llama3.2:latest",  # Model yang umum tersedia di Groq
+    "llm_model": "llama3-8b-8192",  # Model yang umum tersedia di Groq
     "ollama_base_url": "http://localhost:11434/v1"
 }
 
