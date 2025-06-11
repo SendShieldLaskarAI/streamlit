@@ -351,7 +351,7 @@ def main():
     elif not analyze_button and st.session_state.prediction_result is None:
         st.markdown("---")
         try:
-            st.image(CONFIG["placeholder_image_path"], use_column_width=True)
+            st.image(CONFIG["placeholder_image_path"], use_container_width=True)
         except FileNotFoundError:
             st.info("Hasil analisis akan ditampilkan di sini.")
 
