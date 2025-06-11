@@ -217,7 +217,7 @@ def get_aura_feedback(_prediction_index, _llm_client, _llm_mode):
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=200
+            max_tokens=1000
         )
         return response.choices[0].message.content
     except Exception as e:
