@@ -291,41 +291,70 @@ def render_main_results(result_data):
 
 def main():
     st.set_page_config(page_title="SendShield - Deteksi Cyberbullying", layout="wide", initial_sidebar_state="auto")
+
+    # Muat semua resource sekali di awal
     resources = load_all_resources()
 
-    try: st.image(Image.open(CONFIG["logo_path"]), width=200)
-    except FileNotFoundError: st.markdown("# 🛡️ SendShield")
+    # --- Render Header & Sidebar ---
+    try:
+        st.image(Image.open(CONFIG["logo_path"]), width=200)
+    except FileNotFoundError:
+        st.markdown("# 🛡️ SendShield")
     
     render_sidebar(resources)
     
+    # --- Render Konten Utama ---
     st.title("Cyberbullying Detection")
     st.markdown("Analisis teks untuk mendeteksi potensi perundungan siber secara real-time.")
     
     st.subheader("Masukkan Teks Anda")
-    user_input = st.text_area("Teks untuk dianalisis:", height=150, key="user_text_input", placeholder="Contoh: Kamu hebat sekali! Terima kasih atas bantuannya kemarin.")
-    analyze_button = st.button("Analisis Teks", type="primary", use_container_width=True, disabled=not(resources["status"]["model_ok"] and resources["status"]["tokenizer_ok"]))
+    user_input = st.text_area(
+        "Teks untuk dianalisis:", height=150, key="user_text_input",
+        placeholder="Contoh: Kamu hebat sekali! Terima kasih atas bantuannya kemarin."
+    )
+    analyze_button = st.button("Analisis Teks", type="primary", use_container_width=True, 
+                               disabled=not(resources["status"]["model_ok"] and resources["status"]["tokenizer_ok"]))
 
+    # --- Manajemen State untuk Refresh Otomatis ---
+    # Inisialisasi state jika belum ada
     if 'prediction_result' not in st.session_state:
         st.session_state.prediction_result = None
+    if 'last_analyzed_text' not in st.session_state:
+        st.session_state.last_analyzed_text = None
 
+    # Logika untuk me-reset hasil jika input teks berubah
+    if user_input != st.session_state.last_analyzed_text:
+        st.session_state.prediction_result = None
+    # --- Akhir dari Manajemen State ---
+
+
+    # Jalankan analisis HANYA saat tombol ditekan
     if analyze_button:
         if user_input.strip():
             with st.spinner('Menganalisis teks...'):
+                # Simpan hasil dan teks yang dianalisis ke state
                 st.session_state.prediction_result = run_prediction_pipeline(user_input, resources)
+                st.session_state.last_analyzed_text = user_input
         else:
             st.warning("Input teks tidak boleh kosong.", icon="✍️")
+            # Kosongkan hasil jika input kosong
             st.session_state.prediction_result = None
+            st.session_state.last_analyzed_text = user_input
 
-    # Tampilkan seluruh blok hasil di bawah jika ada
+
+    # Tampilkan blok hasil JIKA ada hasil di session state
     if st.session_state.prediction_result:
         render_main_results(st.session_state.prediction_result)
     
-    elif not analyze_button:
+    # Tampilkan placeholder JIKA tidak ada hasil DAN tombol belum ditekan di siklus ini
+    # (Logika ini mencegah placeholder muncul sesaat setelah tombol ditekan)
+    elif not analyze_button and st.session_state.prediction_result is None:
         st.markdown("---")
         try:
-            st.image(CONFIG["placeholder_image_path"], use_container_width=True)
+            st.image(CONFIG["placeholder_image_path"], use_column_width=True)
         except FileNotFoundError:
             st.info("Hasil analisis akan ditampilkan di sini.")
 
 if __name__ == "__main__":
+    # Pastikan semua definisi fungsi lain sudah ada di atas
     main()
