@@ -168,7 +168,6 @@ def preprocess_text(raw_text, resources):
     if not is_text_valid_for_inference(text): return ""
     return text
 
-@st.cache_data
 def get_aura_feedback(_prediction_index, _llm_client, _llm_mode):
     """
     Menghasilkan prompt dan memanggil LLM berdasarkan prediksi.
